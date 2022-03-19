@@ -1,0 +1,61 @@
+---
+kind: pipeline
+type: docker
+name: default
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:      
+  - name: deploy
+    image: plugins/docker
+    settings:
+      username:
+        from_secret: docker_username
+      password:
+        from_secret: docker_password
+      repo: michigg/wp-cli-ldap
+      auto_tag: true
+      dockerfile: Dockerfile
+      context: .
+    when:
+      branch:
+        - master
+      event:
+        - tag
+        - push
+    depends_on:
+      - build
+
+  - name: notify
+    image: plugins/matrix
+    settings:
+      homeserver:
+        from_secret: matrix_homeserver
+      roomid:
+        from_secret: matrix_roomid
+      userid:
+        from_secret: matrix_userid
+      accesstoken:
+        from_secret: matrix_accesstoken
+      template: >
+        {{#success build.status}}
+        ✅ {{repo.owner}}/{{repo.name}}  {{build.number}}
+        {{else}}
+        ❌ {{repo.owner}}/{{repo.name}} {{build.number}}
+        {{/success}}
+        depends_on:
+        - deploy
+    when:
+      status:
+        - success
+        - failure
+    depends_on:
+      - deploy
+      - build
+
+trigger:
+  event:
+    - push
+    - tag
