@@ -25,8 +25,6 @@ steps:
       event:
         - tag
         - push
-    depends_on:
-      - build
 
   - name: notify
     image: plugins/matrix
