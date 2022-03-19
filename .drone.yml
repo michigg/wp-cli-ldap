@@ -51,7 +51,6 @@ steps:
         - failure
     depends_on:
       - deploy
-      - build
 
 trigger:
   event:
